@@ -32,7 +32,12 @@ class SampleCountry(BaseModel):
     id: str
     value: int
 
+# schema for validation predictions
+class Prediction(BaseModel):
+    code3: str
+    value: float
 
+# ------------------- USERS
 # Schema for validating user creation
 class UserCreate(BaseModel):
     username: str
