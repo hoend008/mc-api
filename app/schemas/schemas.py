@@ -1,9 +1,6 @@
 from pydantic import BaseModel, EmailStr
 from datetime import datetime
 
-
-##### schemas for validating data from user
-
 # schema for validation countries
 class Country(BaseModel):
     id: int
@@ -29,10 +26,15 @@ class SampleYears(BaseModel):
     count: int
 
 class SampleCountry(BaseModel):
-    id: str
-    value: int
+    iso_a3: str
+    density: float
 
+# schema for validation predictions
+class Prediction(BaseModel):
+    code3: str
+    value: float
 
+# ------------------- USERS
 # Schema for validating user creation
 class UserCreate(BaseModel):
     username: str
