@@ -59,14 +59,21 @@ def get_samples_years(iso_a3: str = None, feedconversion_id: int = None, current
     return sample_years
 
 @router.get("/countries", response_model=List[SampleCountry])
-def get_samples_countries(current_user: int = Depends(get_current_user)) -> List[SampleCountry]:
+def get_samples_countries(iso_a3: str = None, current_user: int = Depends(get_current_user)) -> List[SampleCountry]:
     
     # construct query based on path parameters
-    start_query = "SELECT LOWER(c.code3) AS iso_a3, COUNT(*) AS density FROM ews.sample s JOIN ontologies.country c ON s.country_id = c.id WHERE c.code3 <> '999'"
-    end_query = " GROUP BY c.code3;"
+    start_query = "SELECT LOWER(iso_a3) AS iso_a3, COUNT(*) AS density FROM ews.vw_sample WHERE iso_a3 <> '999'"
 
-    query_final = start_query + end_query
-    
+    if iso_a3:
+        country_query = f" AND iso_a3 = '{iso_a3.lower()}'"
+    else:
+        country_query = " AND 1 = 1"
+        
+    end_query = " GROUP BY iso_a3;"
+
+    query_final = start_query + country_query + end_query
+    print("----------------------------")
+    print(query_final)
     # fetch data
     with PostgresDatabase() as db:
         db.execute(query_final)
