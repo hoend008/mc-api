@@ -29,6 +29,11 @@ class SampleCountry(BaseModel):
     iso_a3: str
     density: float
 
+class SampleProducts(BaseModel):
+    feedconversion_id: int
+    productname: str
+    count: int
+
 # schema for validation predictions
 class Prediction(BaseModel):
     code3: str
