@@ -106,8 +106,7 @@ def get_samples_countries(iso_a3: str = None, current_user: int = Depends(get_cu
     end_query = " GROUP BY iso_a3;"
 
     query_final = start_query + country_query + end_query
-    print("----------------------------")
-    print(query_final)
+
     # fetch data
     with PostgresDatabase() as db:
         db.execute(query_final)
