@@ -32,7 +32,7 @@ def get_password_hash(password):
 
 
 def get_user(username: str) -> UserInDB:
-    with PostgresDatabase(DB_NAME, DB_USER, DB_PASSWORD) as db:
+    with PostgresDatabase(DB_NAME, DB_USER, DB_PASSWORD, realdictcursor=True) as db:
         db.execute("""SELECT * FROM administration.users WHERE username = %s""", (username,))
         user = db.fetchone()
     if not user:

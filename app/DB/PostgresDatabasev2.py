@@ -3,15 +3,10 @@ import numpy as np
 import pandas as pd
 import os
 from typing import List, Dict, Set
-
-# from psycopg2.extensions import register_adapter, AsIs
 psycopg2.extensions.register_adapter(np.int64, psycopg2._psycopg.AsIs)
-
+from psycopg2.extras import RealDictCursor
 from datetime import date
 from dataclasses import dataclass
-
-import sys
-sys.path.insert(1, 'W:/WFSR/Projects/72250_Statistics_NP_Feed/11. Libs')
 from DFdiffChecker import ColumnChecker, ValueDifferences, ValueChecker
 
 @dataclass
@@ -35,14 +30,23 @@ with PostgresDatabase('owfsr', DB_USER, DB_PASSWORD) as db:
 """
 
 class PostgresDatabase:
-    def __init__(self, db_name, db_user, db_password, host="opostgres16.cdbe.wurnet.nl"):
-        #print(f"connection to {host}")
-        self.connection = psycopg2.connect(user = db_user,
-                                           password = db_password,
-                                           host = host,
-                                           port = "5432",
-                                           database = db_name)
-        self.cursor = self.connection.cursor()
+    def __init__(self, db_name, db_user, db_password, host="opostgres16.cdbe.wurnet.nl", realdictcursor=False):
+        
+        if not realdictcursor:
+            self.connection = psycopg2.connect(user = db_user,
+                                            password = db_password,
+                                            host = host,
+                                            port = "5432",
+                                            database = db_name)
+            self.cursor = self.connection.cursor()
+        else:
+            self.connection = psycopg2.connect(user = db_user,
+                                            password = db_password,
+                                            host = host,
+                                            port = "5432",
+                                            database = db_name,
+                                            cursor_factory=RealDictCursor)
+            self.cursor = self.connection.cursor()            
 
     def __enter__(self):
         return self
@@ -84,7 +88,7 @@ class PostgresDatabase:
     def columnnames_identical(self, schema: str, tbl: str, df_columns: List[str]) -> DbColumns:
         
         # get columnnames from table with essential columns
-        db_columns = self.query(f"SELECT column_name FROM information_schema.columns WHERE table_schema = '{schema}' AND table_name = '{tbl}' AND column_name <> 'id';")
+        db_columns = self.query(f"SELECT column_name FROM information_schema.columns WHERE table_schema = '{schema}' AND table_name = '{tbl}' AND column_name NOT IN ('id', 'created_at');")
         # convert to list
         db_columns = [x[0] for x in db_columns]
         
