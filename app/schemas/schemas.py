@@ -1,43 +1,70 @@
 from pydantic import BaseModel, EmailStr
 from datetime import datetime
 
-# schema for validation countries
-class Country(BaseModel):
+# ------------------- MC DATA
+class MCdata(BaseModel):
+    team_id: int
+    mutation_date: datetime
+    insert_date: datetime
+    val_report_name: str
+    val_report_date: datetime
+    plan_nvwa_year: int
+    groupori: str
+    use: str
+    productgroup: str
+    sample_matrix: str
+    e02_sampmatcode1_en: str
+    e02_sampmatcode1_nl: str
+    e02_sampmatcode2_en: str
+    e02_sampmatcode2_nl: str
+    e02_sampmatcode3_en: str
+    e02_sampmatcode3_nl: str
+    e02_sampmatcode4_en: str
+    e02_sampmatcode4_nl: str
+    productmatrix_code: str
+    mtx_code: str
+    substance_group: str
+    antibiotica_ab_groep: str
+    param_code: str
+    param_name: str
+    paramtext_lims: str
+    paramtext_abbreviation: str
+    paramtype_code: str
+    paramtype_name: str
+    anmethodref: str
+    anmethodref_new: str
+    flex_scope_no: int
+    qual_quan_method: str
+    anlytyp_code: str
+    anlytyp_name: str
+    anlymd_code: str
+    anlymd_name: str
+    mdacc_code: str
+    mdacc_name: str
+    resinfo: str
+    resunit_wfsr: str
+    unit_code: str
+    exprres_code: str
+    lod: float | None
+    loq: float | None
+    ccalpha: float | None
+    ccbeta: float | None
+    resvaluncert: float | None
+    evallowlimit: float | None
+    actionlevel: float | None
+    lmttyp_code: str
+    lmttyp_name: str
+    confirmation_sop: str
+    lu_s_productid: str
+    matrix_cal_curve: str
+    measuring_range: str
+    trueness_j_recovery: float | None
+    rsdr: float | None
+    rsdwr_rsdrl: float | None
+    remarks: str
+
+class MCOut(BaseModel):
     id: int
-    code2: str
-    code3: str
-    country: str
-
-# schema for validation samples
-class Sample(BaseModel):
-    id: int
-    dataprovider: str
-    sample_number: str
-    country_id: int
-    feedconversion_id: int
-
-# schema for validation counts
-class Count(BaseModel):
-    count: int
-
-# schema for validation year, counts
-class SampleYears(BaseModel):
-    year: int
-    count: int
-
-class SampleCountry(BaseModel):
-    iso_a3: str
-    density: float
-
-class SampleProducts(BaseModel):
-    feedconversion_id: int
-    productname: str
-    count: int
-
-# schema for validation predictions
-class Prediction(BaseModel):
-    code3: str
-    value: float
 
 # ------------------- USERS
 # Schema for validating user creation

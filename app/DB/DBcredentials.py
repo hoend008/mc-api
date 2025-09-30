@@ -5,7 +5,7 @@ import os
 #dbhost = os.getenv("DATABASE_HOST_GEWAS")
 #dbname = os.getenv("DATABASE_NAME_GEWAS")
 
-dbuser = 'wouter_python'
-dbpass = '3XPsaPklKcJkPrG'
-dbhost = 'opostgres16.cdbe.wurnet.nl'
-dbname = 'owfsr'
+DB_USER = 'wouter_python'
+DB_PASSWORD = '3XPsaPklKcJkPrG'
+DB_HOST = 'opostgres16.cdbe.wurnet.nl'
+DB_NAME = 'omc'

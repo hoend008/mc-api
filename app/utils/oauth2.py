@@ -6,8 +6,9 @@ import jwt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from passlib.context import CryptContext
-from DB.DBconnection import PostgresDatabase
+from DB.PostgresDatabasev2 import PostgresDatabase
 from schemas.schemas import User, UserInDB, TokenData
+from DB.DBcredentials import DB_USER, DB_PASSWORD, DB_NAME
 
 #SECRET_KEY = os.getenv("SECRET_KEY")
 #ALGORITHM = os.getenv("ALGORITHM")
@@ -31,7 +32,7 @@ def get_password_hash(password):
 
 
 def get_user(username: str) -> UserInDB:
-    with PostgresDatabase() as db:
+    with PostgresDatabase(DB_NAME, DB_USER, DB_PASSWORD) as db:
         db.execute("""SELECT * FROM administration.users WHERE username = %s""", (username,))
         user = db.fetchone()
     if not user:

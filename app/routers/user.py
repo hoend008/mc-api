@@ -1,5 +1,5 @@
 from fastapi import status, HTTPException, APIRouter, Depends
-from DB.DBconnection import PostgresDatabase
+from DB.PostgresDatabasev2 import PostgresDatabase
 from schemas.schemas import UserCreate, UserOut
 from utils.oauth2 import get_current_user, get_password_hash
 
