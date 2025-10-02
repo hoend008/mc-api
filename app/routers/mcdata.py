@@ -1,7 +1,8 @@
 from fastapi import status, APIRouter, Depends, HTTPException
 import pandas as pd
+import numpy as np
 from typing import List
-from schemas.schemas import MCdata, ReturnMessage, MCdataOut
+from schemas.schemas import MCdata, MCdataIn, ReturnMessage, MCdataOut
 from DB.PostgresDatabasev2 import PostgresDatabase
 from DB.DBcredentials import DB_USER, DB_PASSWORD, DB_NAME
 from utils.oauth2 import get_current_user
@@ -27,7 +28,7 @@ def get_user(current_user: int = Depends(get_current_user)):
 
 
 @router.post("/", status_code=status.HTTP_201_CREATED, response_model=ReturnMessage)
-def insert_mcdata(mcdata: List[MCdata], current_user: int = Depends(get_current_user)) -> ReturnMessage:
+def insert_mcdata(mcdata: List[MCdataIn], current_user: int = Depends(get_current_user)) -> ReturnMessage:
 
   """
   CREATE DATAFRAME FROM mcdata
@@ -62,6 +63,13 @@ def insert_mcdata(mcdata: List[MCdata], current_user: int = Depends(get_current_
   REPLACE NAN WITH EMPTY STRING
   """
   df = df.replace('nan', '')
+
+  """
+  ADD MISSING COLUMNS
+  """
+  for col in datatype_conversion_dict.keys():
+      if col not in df.columns:
+          df[col] = np.nan
 
   """
   TEMPORARY

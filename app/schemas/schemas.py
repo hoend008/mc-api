@@ -2,6 +2,69 @@ from pydantic import BaseModel, EmailStr
 from datetime import datetime
 
 # ------------------- MC DATA
+class MCdataIn(BaseModel):
+    actionlevel:  float | None
+    anlymd_code:  str
+    anlymd_name:  str
+    anlytyp_code:  str
+    anlytyp_name:  str
+    anmethodref:  str
+    anmethodref_new:  str | None
+    antibiotica_ab_groep:  str
+    ccalpha:  float | None
+    ccbeta:  float | None
+    confirmation_sop:  str
+    e02_sampmatcode1_en:  str
+    e02_sampmatcode1_nl:  str
+    e02_sampmatcode2_en:  str
+    e02_sampmatcode2_nl:  str
+    e02_sampmatcode3_en:  str | None
+    e02_sampmatcode3_nl:  str | None
+    e02_sampmatcode4_en:  str | None
+    e02_sampmatcode4_nl:  str | None
+    evallowlimit:  float | None
+    exprres_code:  str
+    flex_scope_no:  int
+    groupori:  str | None
+    identifier:  int
+    insert_date:  datetime
+    lmttyp_code:  str
+    lmttyp_name:  str
+    lod:  float | None
+    loq:  float | None
+    lu_s_productid:  str
+    matrix_cal_curve:  str | None
+    mdacc_code:  str
+    mdacc_name:  str
+    measuring_range:  str | None
+    mtx_code:  str | None
+    mutation_date:  datetime
+    param_code:  str
+    param_name:  str
+    paramtext_abbreviation:  str | None
+    paramtext_lims:  str
+    paramtype_code:  str
+    paramtype_name:  str
+    plan_nvwa_year:  int
+    productgroup:  str | None
+    productmatrix_code:  str | None
+    qual_quan_method:  str
+    remarks:  str | None
+    resinfo:  str | None
+    resunit_wfsr:  str
+    resvaluncert:  float | None
+    rsdr:  float | None
+    rsdwr_rsdrl:  float | None
+    sample_matrix:  str
+    substance_group:  str
+    team_id:  int
+    trueness_j_recovery:  float | None
+    unit_code:  str
+    use:  str
+    val_report_date:  datetime
+    val_report_name:  str
+
+
 class MCdata(BaseModel):
     team_id: int
     identifier: int
