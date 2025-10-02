@@ -66,7 +66,7 @@ def insert_mcdata(mcdata: List[MCdata], current_user: int = Depends(get_current_
   """
   TEMPORARY
   """
-  df['identifier'] = 1
+  # df['identifier'] = 1
 
   """
   SAVE TO DB

@@ -4,6 +4,7 @@ from datetime import datetime
 # ------------------- MC DATA
 class MCdata(BaseModel):
     team_id: int
+    identifier: int
     mutation_date: datetime
     insert_date: datetime
     val_report_name: str
@@ -66,6 +67,7 @@ class MCdata(BaseModel):
 class MCdataOut(BaseModel):
     id: int
     team_id: int
+    identifier: int
     mutation_date: datetime
     insert_date: datetime
     val_report_name: str

@@ -1,4 +1,5 @@
 datatype_conversion_dict = {'team_id': 'int',
+ 'identifier': 'int',
  'mutation_date': 'date',
  'insert_date': 'date',
  'val_report_name': 'str',
