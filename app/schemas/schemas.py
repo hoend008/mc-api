@@ -194,6 +194,12 @@ class MCdataOut(BaseModel):
 class ReturnMessage(BaseModel):
     msg: str
 
+# --- Define the Pydantic model ---
+class Person(BaseModel):
+    firstname: str
+    lastname: str
+    age: int
+
 # ------------------- USERS
 # Schema for validating user creation
 class UserCreate(BaseModel):

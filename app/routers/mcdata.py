@@ -2,12 +2,21 @@ from fastapi import status, APIRouter, Depends, HTTPException
 import pandas as pd
 import numpy as np
 from typing import List
-from schemas.schemas import MCdata, MCdataIn, ReturnMessage, MCdataOut
+from schemas.schemas import MCdata, MCdataIn, ReturnMessage, MCdataOut, Person
 from DB.PostgresDatabasev2 import PostgresDatabase
 from DB.DBcredentials import DB_USER, DB_PASSWORD, DB_NAME
 from utils.oauth2 import get_current_user
 from utils.column_conversion import cols_conversion_dict
 from utils.datatype_conversion import datatype_conversion_dict
+
+
+
+from fastapi.responses import FileResponse
+from openpyxl import load_workbook
+import tempfile
+import os
+
+
 
 import warnings
 warnings.filterwarnings('ignore')
@@ -26,7 +35,7 @@ def get_user(current_user: int = Depends(get_current_user)):
                             detail="MC data not found")
     return mcdata  
 
-
+""" Post MC data to store in DB """
 @router.post("/", status_code=status.HTTP_201_CREATED, response_model=ReturnMessage)
 def insert_mcdata(mcdata: List[MCdataIn], current_user: int = Depends(get_current_user)) -> ReturnMessage:
 
@@ -67,9 +76,9 @@ def insert_mcdata(mcdata: List[MCdataIn], current_user: int = Depends(get_curren
   """
   ADD MISSING COLUMNS
   """
-  for col in datatype_conversion_dict.keys():
-      if col not in df.columns:
-          df[col] = np.nan
+  #for col in datatype_conversion_dict.keys():
+  #    if col not in df.columns:
+  #        df[col] = np.nan
 
   """
   TEMPORARY
@@ -86,3 +95,60 @@ def insert_mcdata(mcdata: List[MCdataIn], current_user: int = Depends(get_curren
                        text_output=False)   
 
       return {"msg": "Data successfully updated"}
+  
+
+
+
+
+""" Helper function """
+# --- Helper function to find last row with actual data ---
+def get_last_data_row(sheet):
+    last_data_row = 0
+    for row in sheet.iter_rows(values_only=True):
+        if any(cell is not None and cell != "" for cell in row):
+            last_data_row += 1
+    return last_data_row
+
+""" Appends data to Excel and then returns the Excel for download """
+@router.post("/appendpeople")
+def append_people(people: List[Person]):
+
+    cwd = os.getcwd()
+    path = os.path.join(cwd, "tests/people.xlsx")
+    file_path = os.path.abspath(path)
+
+    if not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail="Excel file not found")
+
+    print("converting to dataframe")
+    # Convert input to DataFrame for convenience
+    df = pd.DataFrame([p.dict() for p in people])
+
+    print("loading excel")
+    # Load the workbook and sheet
+    book = load_workbook(file_path)
+    sheet = book["Sheet1"]
+
+    # Find the last data row (ignores formatting-only rows)
+    next_row = get_last_data_row(sheet) + 1
+
+    print("appending data")
+    # Append data row by row
+    for r in df.itertuples(index=False, name=None):
+        for col_index, value in enumerate(r, start=1):
+            sheet.cell(row=next_row, column=col_index, value=value)
+        next_row += 1
+
+    print("saving to tmp file")
+    # Save to a temporary file so we don't overwrite the original
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".xlsx") as tmp:
+        temp_path = tmp.name
+        book.save(temp_path)
+
+    print("return response")
+    # Return the file as a download
+    return FileResponse(
+        temp_path,
+        filename="updated_people.xlsx",
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
