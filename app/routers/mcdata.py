@@ -110,21 +110,36 @@ def get_last_data_row(sheet):
     return last_data_row
 
 """ Appends data to Excel and then returns the Excel for download """
-@router.post("/appendpeople")
-def append_people(people: List[Person]):
+@router.post("/appendMCdata")
+def append_people(mcdata: List[MCdataIn]):
 
     cwd = os.getcwd()
-    path = os.path.join(cwd, "tests/people.xlsx")
+    path = os.path.join(cwd, "tests/testMC.xlsx")
     file_path = os.path.abspath(path)
 
     if not os.path.exists(file_path):
         raise HTTPException(status_code=404, detail="Excel file not found")
 
-    print("converting to dataframe")
     # Convert input to DataFrame for convenience
-    df = pd.DataFrame([p.dict() for p in people])
+    df = pd.DataFrame([p.dict() for p in mcdata])
 
-    print("loading excel")
+    # reorder columns
+    df = df[datatype_conversion_dict.keys()]
+
+    """
+    CONVERT DATATYPE
+    """
+    for col in df.columns:
+        # get datatype
+        dt = datatype_conversion_dict[col]
+        
+        # set datatype
+        if dt == 'date':
+            df[col] = df[col].dt.date
+        else:
+            # set datatype
+            df[col] = df[col].astype(dt)
+
     # Load the workbook and sheet
     book = load_workbook(file_path)
     sheet = book["Sheet1"]
@@ -132,23 +147,20 @@ def append_people(people: List[Person]):
     # Find the last data row (ignores formatting-only rows)
     next_row = get_last_data_row(sheet) + 1
 
-    print("appending data")
     # Append data row by row
     for r in df.itertuples(index=False, name=None):
         for col_index, value in enumerate(r, start=1):
             sheet.cell(row=next_row, column=col_index, value=value)
         next_row += 1
 
-    print("saving to tmp file")
     # Save to a temporary file so we don't overwrite the original
     with tempfile.NamedTemporaryFile(delete=False, suffix=".xlsx") as tmp:
         temp_path = tmp.name
         book.save(temp_path)
 
-    print("return response")
     # Return the file as a download
     return FileResponse(
         temp_path,
-        filename="updated_people.xlsx",
+        filename="updated_testMC.xlsx",
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
