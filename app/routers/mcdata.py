@@ -110,21 +110,24 @@ def get_last_data_row(sheet):
     return last_data_row
 
 """ Appends data to Excel and then returns the Excel for download """
-@router.post("/appendMCdata")
+@router.post("/download")
 def append_people(mcdata: List[MCdataIn]):
 
     cwd = os.getcwd()
-    path = os.path.join(cwd, "tests/testMC.xlsx")
+    path = os.path.join(cwd, "tests/output_MC_database.xlsx")
     file_path = os.path.abspath(path)
 
     if not os.path.exists(file_path):
         raise HTTPException(status_code=404, detail="Excel file not found")
 
+    # get data from DB
+    with PostgresDatabase(DB_NAME, DB_USER, DB_PASSWORD) as db:
+        df = db.querydf("SELECT * FROM mc.vw_tabel_including_archive ORDER BY team_id, identifier, created_at DESC;")
     # Convert input to DataFrame for convenience
-    df = pd.DataFrame([p.dict() for p in mcdata])
+    # df = pd.DataFrame([p.dict() for p in mcdata])
 
     # reorder columns
-    df = df[datatype_conversion_dict.keys()]
+    # df = df[datatype_conversion_dict.keys()]
 
     """
     CONVERT DATATYPE
@@ -135,18 +138,19 @@ def append_people(mcdata: List[MCdataIn]):
         
         # set datatype
         if dt == 'date':
-            df[col] = df[col].dt.date
+            #df[col] = df[col].dt.date
+            df[col] = pd.to_datetime(df[col])
         else:
             # set datatype
             df[col] = df[col].astype(dt)
 
     # Load the workbook and sheet
     book = load_workbook(file_path)
-    sheet = book["Sheet1"]
+    sheet = book["Output"]
 
     # Find the last data row (ignores formatting-only rows)
     next_row = get_last_data_row(sheet) + 1
-
+    print(next_row)
     # Append data row by row
     for r in df.itertuples(index=False, name=None):
         for col_index, value in enumerate(r, start=1):

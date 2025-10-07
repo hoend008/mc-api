@@ -57,4 +57,6 @@ datatype_conversion_dict = {'team_id': 'int',
  'trueness_j_recovery': 'float',
  'rsdr': 'float',
  'rsdwr_rsdrl': 'float',
- 'remarks': 'str'}
+ 'remarks': 'str',
+ 'created_at': 'date',
+ 'updated_at': 'date'}
