@@ -9,14 +9,11 @@ from utils.oauth2 import get_current_user
 from utils.column_conversion import cols_conversion_dict
 from utils.datatype_conversion import datatype_conversion_dict
 
-
-
 from fastapi.responses import FileResponse
 from openpyxl import load_workbook
+from openpyxl.styles import PatternFill
 import tempfile
 import os
-
-
 
 import warnings
 warnings.filterwarnings('ignore')
@@ -38,7 +35,7 @@ def get_user(current_user: int = Depends(get_current_user)):
 """ Post MC data to store in DB """
 @router.post("/", status_code=status.HTTP_201_CREATED, response_model=ReturnMessage)
 def insert_mcdata(mcdata: List[MCdataIn], current_user: int = Depends(get_current_user)) -> ReturnMessage:
-
+  print("inserting data...")
   """
   CREATE DATAFRAME FROM mcdata
   """
@@ -63,7 +60,8 @@ def insert_mcdata(mcdata: List[MCdataIn], current_user: int = Depends(get_curren
       
       # set datatype
       if dt == 'date':
-          df[col] = df[col].dt.date
+          #df[col] = df[col].dt.date
+          df[col] = pd.to_datetime(df[col])
       else:
           # set datatype
           df[col] = df[col].astype(dt)
@@ -88,6 +86,7 @@ def insert_mcdata(mcdata: List[MCdataIn], current_user: int = Depends(get_curren
   """
   SAVE TO DB
   """
+  print("to DB...")
   with PostgresDatabase(DB_NAME, DB_USER, DB_PASSWORD) as db:
       db.insert_update(df.copy(), 
                        'mc.tabel_test', 
@@ -140,6 +139,8 @@ def append_people(mcdata: List[MCdataIn]):
         if dt == 'date':
             #df[col] = df[col].dt.date
             df[col] = pd.to_datetime(df[col])
+            if col not in ['created_at', 'updated_at']:
+                df[col] = df[col].dt.strftime('%d-%m-%Y').str.replace(r'\b0', '', regex=True)
         else:
             # set datatype
             df[col] = df[col].astype(dt)
@@ -150,12 +151,22 @@ def append_people(mcdata: List[MCdataIn]):
 
     # Find the last data row (ignores formatting-only rows)
     next_row = get_last_data_row(sheet) + 1
-    print(next_row)
+
     # Append data row by row
     for r in df.itertuples(index=False, name=None):
         for col_index, value in enumerate(r, start=1):
-            sheet.cell(row=next_row, column=col_index, value=value)
+            if not pd.isna(value) and value is not None and value not in ['nan', 'None']:
+                sheet.cell(row=next_row, column=col_index, value=value)
         next_row += 1
+
+    # row styling (grey color for each odd numbered row)
+    grey_fill = PatternFill(start_color="DDDDDD", end_color="DDDDDD", fill_type="solid")
+
+    # Apply style to every odd-numbered row (excluding header if desired)
+    for row in sheet.iter_rows(min_row=2, max_row=sheet.max_row):  # skip header row (start from 2)
+        if row[0].row % 2 == 1:  # odd-numbered row
+            for cell in row:
+                cell.fill = grey_fill
 
     # Save to a temporary file so we don't overwrite the original
     with tempfile.NamedTemporaryFile(delete=False, suffix=".xlsx") as tmp:
