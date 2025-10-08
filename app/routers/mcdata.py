@@ -107,9 +107,9 @@ def get_last_data_row(sheet):
             last_data_row += 1
     return last_data_row
 
-""" Appends data to Excel and then returns the Excel for download """
-@router.post("/download")
-def append_people(mcdata: List[MCdataIn]):
+""" Appends MC data to Excel and then returns the Excel for download """
+@router.get("/download")
+def download_mcdata(sop: str = None, current_user: int = Depends(get_current_user)):
 
     cwd = os.getcwd()
     path = os.path.join(cwd, "tests/output_MC_database.xlsx")
@@ -118,9 +118,18 @@ def append_people(mcdata: List[MCdataIn]):
     if not os.path.exists(file_path):
         raise HTTPException(status_code=404, detail="Excel file not found")
 
+    # get sop query
+    if sop:
+        sop_query = f"anmethodref = '{sop.lower()}'"
+    else:
+        sop_query = "1 = 1"
+    
     # get data from DB
+    query_start = "SELECT * FROM mc.vw_tabel_including_archive WHERE "
+    query_end = " ORDER BY team_id, identifier, created_at DESC;"
+    query = query_start + sop_query + query_end
     with PostgresDatabase(DB_NAME, DB_USER, DB_PASSWORD) as db:
-        df = db.querydf("SELECT * FROM mc.vw_tabel_including_archive ORDER BY team_id, identifier, created_at DESC;")
+        df = db.querydf(query)
     # Convert input to DataFrame for convenience
     # df = pd.DataFrame([p.dict() for p in mcdata])
 
