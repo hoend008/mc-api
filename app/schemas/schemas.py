@@ -1,6 +1,10 @@
 from pydantic import BaseModel, EmailStr
 from datetime import datetime
 
+# ------------------- SOP
+class Sop(BaseModel):
+    sop: str
+
 # ------------------- MC DATA
 class MCdataIn(BaseModel):
     actionlevel:  float | None
