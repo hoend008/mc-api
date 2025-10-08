@@ -35,7 +35,7 @@ def get_user(current_user: int = Depends(get_current_user)):
 """ Post MC data to store in DB """
 @router.post("/", status_code=status.HTTP_201_CREATED, response_model=ReturnMessage)
 def insert_mcdata(mcdata: List[MCdataIn], current_user: int = Depends(get_current_user)) -> ReturnMessage:
-  print("inserting data...")
+  
   """
   CREATE DATAFRAME FROM mcdata
   """
@@ -69,7 +69,7 @@ def insert_mcdata(mcdata: List[MCdataIn], current_user: int = Depends(get_curren
   """
   REPLACE NAN WITH EMPTY STRING
   """
-  df = df.replace('nan', '')
+  df = df.replace('None', np.nan)
 
   """
   ADD MISSING COLUMNS
@@ -86,7 +86,6 @@ def insert_mcdata(mcdata: List[MCdataIn], current_user: int = Depends(get_curren
   """
   SAVE TO DB
   """
-  print("to DB...")
   with PostgresDatabase(DB_NAME, DB_USER, DB_PASSWORD) as db:
       db.insert_update(df.copy(), 
                        'mc.tabel_test', 
