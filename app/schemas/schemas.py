@@ -8,16 +8,16 @@ class Sop(BaseModel):
 # ------------------- MC DATA
 class MCdataIn(BaseModel):
     actionlevel:  float | None
-    anlymd_code:  str
-    anlymd_name:  str
-    anlytyp_code:  str
-    anlytyp_name:  str
-    anmethodref:  str
+    anlymd_code:  str | None
+    anlymd_name:  str | None
+    anlytyp_code:  str | None
+    anlytyp_name:  str | None
+    anmethodref:  str | None
     anmethodref_new:  str | None
-    antibiotica_ab_groep:  str
+    antibiotica_ab_groep:  str | None
     ccalpha:  float | None
     ccbeta:  float | None
-    confirmation_sop:  str
+    confirmation_sop:  str | None
     e02_sampmatcode1_en:  str
     e02_sampmatcode1_nl:  str
     e02_sampmatcode2_en:  str
@@ -26,47 +26,47 @@ class MCdataIn(BaseModel):
     e02_sampmatcode3_nl:  str | None
     e02_sampmatcode4_en:  str | None
     e02_sampmatcode4_nl:  str | None
-    evallowlimit:  float | None
-    exprres_code:  str
-    flex_scope_no:  int
+    evallowlimit:  str | None
+    exprres_code:  str | None
+    flex_scope_no:  int | None
     groupori:  str | None
     identifier:  int
-    insert_date:  datetime
-    lmttyp_code:  str
-    lmttyp_name:  str
+    insert_date:  datetime | None
+    lmttyp_code:  str | None
+    lmttyp_name:  str | None
     lod:  float | None
     loq:  float | None
-    lu_s_productid:  str
+    lu_s_productid:  str | None
     matrix_cal_curve:  str | None
-    mdacc_code:  str
-    mdacc_name:  str
+    mdacc_code:  str | None
+    mdacc_name:  str | None
     measuring_range:  str | None
     mtx_code:  str | None
-    mutation_date:  datetime
+    mutation_date:  datetime | None
     param_code:  str
     param_name:  str
     paramtext_abbreviation:  str | None
-    paramtext_lims:  str
+    paramtext_lims:  str | None
     paramtype_code:  str
     paramtype_name:  str
-    plan_nvwa_year:  int
+    plan_nvwa_year:  int | None
     productgroup:  str | None
     productmatrix_code:  str | None
-    qual_quan_method:  str
+    qual_quan_method:  str | None
     remarks:  str | None
     resinfo:  str | None
-    resunit_wfsr:  str
+    resunit_wfsr:  str | None
     resvaluncert:  float | None
     rsdr:  float | None
     rsdwr_rsdrl:  float | None
-    sample_matrix:  str
-    substance_group:  str
+    sample_matrix:  str | None
+    substance_group:  str | None
     team_id:  int
     trueness_j_recovery:  float | None
-    unit_code:  str
-    use:  str
-    val_report_date:  datetime
-    val_report_name:  str
+    unit_code:  str | None
+    use:  str | None
+    val_report_date:  datetime | None
+    val_report_name:  str | None
 
 
 class MCdata(BaseModel):

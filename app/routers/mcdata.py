@@ -57,7 +57,7 @@ def insert_mcdata(mcdata: List[MCdataIn], current_user: int = Depends(get_curren
   for col in df.columns:
       # get datatype
       dt = datatype_conversion_dict[col]
-      
+      print(col)
       # set datatype
       if dt == 'date':
           #df[col] = df[col].dt.date
