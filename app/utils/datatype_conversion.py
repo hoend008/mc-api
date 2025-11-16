@@ -59,4 +59,5 @@ datatype_conversion_dict = {'team_id': 'int',
  'rsdwr_rsdrl': 'float',
  'remarks': 'str',
  'created_at': 'date',
- 'updated_at': 'date'}
+ 'updated_at': 'date',
+ 'productmatrix_mtx_code': 'str'}

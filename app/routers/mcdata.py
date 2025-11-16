@@ -133,6 +133,10 @@ def download_mcdata(sop: str = None, current_user: int = Depends(get_current_use
     # Convert input to DataFrame for convenience
     # df = pd.DataFrame([p.dict() for p in mcdata])
 
+    # remove two columns
+    COLUMNS = [x for x in df.columns if x not in ['productmatrix_code', 'mtx_code']]
+    df = df[COLUMNS]
+
     # reorder columns
     # df = df[datatype_conversion_dict.keys()]
 
