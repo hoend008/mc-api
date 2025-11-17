@@ -1,6 +1,6 @@
 from fastapi import status, HTTPException, APIRouter, Depends
 from DB.PostgresDatabasev2 import PostgresDatabase
-from schemas.schemas import UserCreate, UserOut
+from schemas.schemas import Team_id, UserCreate, UserOut
 from utils.oauth2 import get_current_user, get_password_hash
 from DB.DBcredentials import DB_USER, DB_PASSWORD, DB_NAME
 
@@ -31,3 +31,4 @@ def get_user(id: int, current_user: int = Depends(get_current_user)):
         raise HTTPException(status.HTTP_404_NOT_FOUND,
                             detail=f"User with id {id} does not exists")
     return user  
+

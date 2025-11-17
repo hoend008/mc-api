@@ -215,7 +215,10 @@ class UserOut(BaseModel):
     username: str
     email: EmailStr | None = None
     created_at: datetime
+    team_id: int
 
+class Team_id(BaseModel):
+    team_id: int
     
 ##### schemas for validation user authentication info
 class Token(BaseModel):
@@ -230,6 +233,7 @@ class User(BaseModel):
     email: EmailStr | None = None
     full_name: str | None = None
     disabled: bool | None = None
+    team_id: int
 
 class UserInDB(User):
     hashed_password: str
