@@ -111,6 +111,7 @@ def get_last_data_row(sheet):
 @router.get("/download")
 def download_mcdata(sop: str = None, current_user: int = Depends(get_current_user)):
 
+    print(sop)
     cwd = os.getcwd()
     path = os.path.join(cwd, "tests/output_MC_database.xlsx")
     file_path = os.path.abspath(path)
@@ -120,8 +121,13 @@ def download_mcdata(sop: str = None, current_user: int = Depends(get_current_use
 
     # get sop query
     if sop:
-        sop_query = f"anmethodref = '{sop.lower()}'"
+        sop_list = sop.split(",")
+        sop_list = ", ".join(f"'{v.lower()}'" for v in sop_list)
+        print(sop_list)
+        #sop_query = f"anmethodref_select = '{sop.lower()}'"
+        sop_query = f"anmethodref_select IN ({sop_list})"
     else:
+        print("else")
         sop_query = "1 = 1"
     
     # get data from DB
@@ -134,7 +140,7 @@ def download_mcdata(sop: str = None, current_user: int = Depends(get_current_use
     # df = pd.DataFrame([p.dict() for p in mcdata])
 
     # remove two columns
-    COLUMNS = [x for x in df.columns if x not in ['productmatrix_code', 'mtx_code']]
+    COLUMNS = [x for x in df.columns if x not in ['productmatrix_code', 'mtx_code', 'anmethodref_select']]
     df = df[COLUMNS]
 
     # reorder columns

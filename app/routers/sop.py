@@ -13,6 +13,6 @@ router = APIRouter(
 @router.get("/", response_model=List[Sop])
 def get_sop(current_user: int = Depends(get_current_user)) -> List[Sop]:
     with PostgresDatabase(DB_NAME, DB_USER, DB_PASSWORD, realdictcursor=True) as db:
-        db.execute("""SELECT anmethodref AS sop FROM mc.tabel_test GROUP BY anmethodref ORDER BY anmethodref;""")
+        db.execute("""SELECT anmethodref_select AS sop FROM mc.vw_tabel_including_archive GROUP BY anmethodref_select ORDER BY anmethodref_select;""")
         sops = db.fetchall()
     return sops
