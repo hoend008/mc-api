@@ -2,7 +2,7 @@ from fastapi import status, APIRouter, Depends, HTTPException
 import pandas as pd
 import numpy as np
 from typing import List
-from schemas.schemas import MCdata, MCdataIn, ReturnMessage, MCdataOut, Person
+from schemas.schemas import MCdataIn, ReturnMessage, MCdataOut, UserInDB
 from DB.PostgresDatabasev2 import PostgresDatabase
 from DB.DBcredentials import DB_USER, DB_PASSWORD, DB_NAME
 from utils.oauth2 import get_current_user
@@ -23,7 +23,7 @@ router = APIRouter(
     tags=["mcdata"])
 
 @router.get('/', response_model=List[MCdataOut])
-def get_user(current_user: int = Depends(get_current_user)):
+def get_user(current_user: UserInDB = Depends(get_current_user)):
     with PostgresDatabase(DB_NAME, DB_USER, DB_PASSWORD, realdictcursor=True) as db:
         db.execute("""SELECT * FROM mc.tabel_test""")
         mcdata = db.fetchall()
@@ -34,7 +34,7 @@ def get_user(current_user: int = Depends(get_current_user)):
 
 """ Post MC data to store in DB """
 @router.post("/", status_code=status.HTTP_201_CREATED, response_model=ReturnMessage)
-def insert_mcdata(mcdata: List[MCdataIn], current_user: int = Depends(get_current_user)) -> ReturnMessage:
+def insert_mcdata(mcdata: List[MCdataIn], current_user: UserInDB = Depends(get_current_user)) -> ReturnMessage:
   
   """
   CREATE DATAFRAME FROM mcdata
@@ -109,7 +109,7 @@ def get_last_data_row(sheet):
 
 """ Appends MC data to Excel and then returns the Excel for download """
 @router.get("/download")
-def download_mcdata(sop: str = None, current_user: int = Depends(get_current_user)):
+def download_mcdata(sop: str = None, current_user: UserInDB = Depends(get_current_user)):
 
     cwd = os.getcwd()
     path = os.path.join(cwd, "tests/output_MC_database.xlsx")

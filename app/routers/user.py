@@ -1,6 +1,6 @@
 from fastapi import status, HTTPException, APIRouter, Depends
 from DB.PostgresDatabasev2 import PostgresDatabase
-from schemas.schemas import Team_id, UserCreate, UserOut
+from schemas.schemas import UserInDB, UserCreate, UserOut
 from utils.oauth2 import get_current_user, get_password_hash
 from DB.DBcredentials import DB_USER, DB_PASSWORD, DB_NAME
 
@@ -23,7 +23,7 @@ def create_user(user: UserCreate):
     return created_user
 
 @router.get('/{id}', response_model=UserOut)
-def get_user(id: int, current_user: int = Depends(get_current_user)):
+def get_user(id: int, current_user: UserInDB = Depends(get_current_user)):
     with PostgresDatabase(DB_NAME, DB_USER, DB_PASSWORD, realdictcursor=True) as db:
         db.execute("""SELECT * FROM administration.users WHERE id = %s""", (str(id),))
         user = db.fetchone()
