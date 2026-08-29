@@ -67,6 +67,13 @@ class MCTabel(BaseModel):
 
 
 
+class MCTabelSaveResponse(BaseModel):
+    received: int
+    inserted: int
+    updated: int
+    unchanged: int
+
+
 class MCdataIn(BaseModel):
     actionlevel:  float | None
     anlymd_code:  str | None
@@ -264,6 +271,7 @@ class Person(BaseModel):
     firstname: str
     lastname: str
     age: int
+
 
 # ------------------- USERS
 # Schema for validating user creation
