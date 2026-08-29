@@ -1,11 +1,72 @@
 from pydantic import BaseModel, EmailStr
-from datetime import datetime
+from datetime import datetime, date
 
 # ------------------- SOP
 class Sop(BaseModel):
     sop: str
 
 # ------------------- MC DATA
+class MCTabel(BaseModel):
+    id: int
+    team_id: int
+    groupori: str | None
+    use: str | None
+    productgroup_id: int | None
+    sample_matrix: str | None
+    e02_sampmatcode1_en: str | None
+    e02_sampmatcode1_nl: str | None
+    e02_sampmatcode2_en: str | None
+    e02_sampmatcode2_nl: str | None
+    e02_sampmatcode3_en: str | None
+    e02_sampmatcode3_nl: str | None
+    e02_sampmatcode4_en: str | None
+    e02_sampmatcode4_nl: str | None
+    mtx_id: int | None
+    substance_group: str | None
+    param_id: int | None
+    param_termextendedname: str | None
+    paramtext_lims: str | None
+    paramtext_abbreviation: str | None
+    paramtyp_id: int | None
+    anmethodref: str | None
+    flex_scope_no: str | None
+    qual_quan_method: str | None
+    anlytyp_id: int | None
+    anlymd_id: int | None
+    mdacc_id: int | None
+    resinfo: str | None
+    resunit_wfsr: str | None
+    unit_id: int | None
+    exprres_id: int | None
+    lod: float | None
+    loq: float | None
+    ccalpha: float | None
+    ccbeta: float | None
+    resvaluncert: float | None
+    evallowlimit: float | None
+    actionlevel: float | None
+    lmttyp_id: int | None
+    confirmation_sop: str | None
+    lu_s_productid: str | None
+    detailedcom: str | None
+    val_report_name: str | None
+    val_report_date: date | None
+    matrix_cal_curve: str | None
+    measuring_range: str | None
+    trueness_j_recovery: float | None
+    rsdr: float | None
+    rsdwr_rsdrl: float | None
+    mutation_date: date | None
+    plan_nvwa_year: int | None
+    remarks: str | None
+    insert_date: date
+    sheetname: str
+
+
+
+
+
+
 class MCdataIn(BaseModel):
     actionlevel:  float | None
     anlymd_code:  str | None
