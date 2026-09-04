@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from routers import sop, mcdata, mctabel, user, auth
+from routers import sop, mcdraft, mctabel, user, auth
 
 app = FastAPI(
   title="title API",
@@ -28,8 +28,8 @@ app.add_middleware(
 )
 
 app.include_router(sop.router)
-#app.include_router(mcdata.router)
 app.include_router(mctabel.router)
+app.include_router(mcdraft.router)
 app.include_router(user.router)
 app.include_router(auth.router)
 

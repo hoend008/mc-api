@@ -74,6 +74,54 @@ class MCTabelSaveResponse(BaseModel):
     unchanged: int
 
 
+
+
+# ------------------- MC DRAFTS
+class MCDraftRow(BaseModel):
+    id: int
+    row_position: int
+    current_data: dict
+    baseline_data: dict
+
+
+class MCDraftSaveRequest(BaseModel):
+    sheetname: str
+    rows: list[MCDraftRow]
+
+
+class MCDraftRowOut(MCDraftRow):
+    draft_row_id: int
+
+
+class MCDraftOut(BaseModel):
+    draft_id: int
+    user_id: int
+    sheetname: str
+    created_at: datetime
+    updated_at: datetime
+    rows: list[MCDraftRowOut]
+
+
+class MCDraftSummary(BaseModel):
+    draft_id: int
+    sheetname: str
+    created_at: datetime
+    updated_at: datetime
+    row_count: int
+
+
+class MCDraftSaveResponse(BaseModel):
+    draft_id: int
+    sheetname: str
+    row_count: int
+    updated_at: datetime
+
+
+class MCDraftDeleteResponse(BaseModel):
+    deleted: bool
+    sheetname: str
+
+
 class MCdataIn(BaseModel):
     actionlevel:  float | None
     anlymd_code:  str | None
@@ -298,6 +346,7 @@ class TokenData(BaseModel):
     username: str | None = None
 
 class User(BaseModel):
+    id: int
     username: str
     email: EmailStr | None = None
     full_name: str | None = None
