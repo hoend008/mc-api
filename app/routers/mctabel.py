@@ -5,7 +5,7 @@ from typing import List
 from fastapi import APIRouter, Depends, HTTPException
 from psycopg2.extras import execute_values
 
-from schemas.schemas import MCTabel, MCTabelSaveResponse
+from schemas.schemas import MCTabel, MCTabelSaveResponse, MCTabelSaveRow, UserInDB
 from DB.PostgresDatabasev2 import PostgresDatabase
 from DB.DBcredentials import DB_USER, DB_PASSWORD, DB_NAME
 from utils.oauth2 import get_current_user
@@ -18,16 +18,16 @@ router = APIRouter(
     tags=["mctable test"],
 )
 
-MCTABEL_COLUMNS = ('id', 'team_id', 'groupori', 'use', 'productgroup_id', 'sample_matrix', 'e02_sampmatcode1_en', 'e02_sampmatcode1_nl', 'e02_sampmatcode2_en', 'e02_sampmatcode2_nl', 'e02_sampmatcode3_en', 'e02_sampmatcode3_nl', 'e02_sampmatcode4_en', 'e02_sampmatcode4_nl', 'mtx_id', 'substance_group', 'param_id', 'param_termextendedname', 'paramtext_lims', 'paramtext_abbreviation', 'paramtyp_id', 'anmethodref', 'flex_scope_no', 'qual_quan_method', 'anlytyp_id', 'anlymd_id', 'mdacc_id', 'resinfo', 'resunit_wfsr', 'unit_id', 'exprres_id', 'lod', 'loq', 'ccalpha', 'ccbeta', 'resvaluncert', 'evallowlimit', 'actionlevel', 'lmttyp_id', 'confirmation_sop', 'lu_s_productid', 'detailedcom', 'val_report_name', 'val_report_date', 'matrix_cal_curve', 'measuring_range', 'trueness_j_recovery', 'rsdr', 'rsdwr_rsdrl', 'mutation_date', 'plan_nvwa_year', 'remarks', 'insert_date', 'sheetname',)
+MCTABEL_COLUMNS = ('id', 'team_id', 'groupori', 'use', 'productgroup_id', 'sample_matrix', 'e02_sampmatcode1_en', 'e02_sampmatcode1_nl', 'e02_sampmatcode2_en', 'e02_sampmatcode2_nl', 'e02_sampmatcode3_en', 'e02_sampmatcode3_nl', 'e02_sampmatcode4_en', 'e02_sampmatcode4_nl', 'mtx_id', 'substance_group', 'param_id', 'param_termextendedname', 'paramtext_lims', 'paramtext_abbreviation', 'paramtyp_id', 'anmethodref', 'flex_scope_no', 'qual_quan_method', 'anlytyp_id', 'anlymd_id', 'mdacc_id', 'resinfo', 'resunit_wfsr', 'unit_id', 'exprres_id', 'lod', 'loq', 'ccalpha', 'ccbeta', 'resvaluncert', 'evallowlimit', 'actionlevel', 'lmttyp_id', 'confirmation_sop', 'lu_s_productid', 'detailedcom', 'val_report_name', 'val_report_date', 'matrix_cal_curve', 'measuring_range', 'trueness_j_recovery', 'rsdr', 'rsdwr_rsdrl', 'mutation_date', 'plan_nvwa_year', 'remarks', 'insert_date', 'sheetname')
 
 
 @router.get("/sheetnames", response_model=List[str])
 def get_mctabel_sheetnames(
-    current_user: int = Depends(get_current_user),
+    current_user: UserInDB = Depends(get_current_user),
 ):
     query = """
         SELECT DISTINCT sheetname
-        FROM mc.tabel
+        FROM mc.tabel_output
         WHERE sheetname IS NOT NULL
           AND sheetname <> ''
         ORDER BY sheetname;
@@ -48,7 +48,7 @@ def get_mctabel_sheetnames(
 @router.get("", response_model=List[MCTabel])
 def get_mctabel(
     sheetname: str,
-    current_user: int = Depends(get_current_user),
+    current_user: UserInDB = Depends(get_current_user),
 ):
     query = """
         SELECT
@@ -106,9 +106,9 @@ def get_mctabel(
             remarks,
             insert_date,
             sheetname
-        FROM mc.tabel
-        WHERE sheetname = %s
-        ORDER BY id;
+        FROM mc.tabel_output AS source
+        WHERE source.sheetname = %s
+        ORDER BY source.id;
     """.replace("\n", "")
 
     with PostgresDatabase(DB_NAME, DB_USER, DB_PASSWORD, realdictcursor=True) as db:
@@ -120,19 +120,20 @@ def get_mctabel(
 
 @router.post("/save", response_model=MCTabelSaveResponse)
 def save_mctabel(
-    rows: List[MCTabel],
-    current_user: int = Depends(get_current_user),
+    rows: List[MCTabelSaveRow],
+    current_user: UserInDB = Depends(get_current_user),
 ):
     total_start = perf_counter()
+
     if not rows:
         return MCTabelSaveResponse(
             received=0,
             inserted=0,
             updated=0,
+            deleted=0,
             unchanged=0,
         )
 
-    step_start = perf_counter()
     keys = [(row.sheetname, row.id) for row in rows]
     if len(keys) != len(set(keys)):
         raise HTTPException(
@@ -140,16 +141,28 @@ def save_mctabel(
             detail="The submitted data contains duplicate (sheetname, id) combinations.",
         )
 
-    timing_keys = perf_counter() - step_start
+    save_rows = [row for row in rows if not row.to_delete]
+    delete_rows = [row for row in rows if row.to_delete]
 
     create_temp_sql = """
         CREATE TEMP TABLE tmp_mctabel_save
         (LIKE mc.tabel_output INCLUDING DEFAULTS)
         ON COMMIT DROP;
+
+        CREATE TEMP TABLE tmp_mctabel_delete (
+            sheetname character varying NOT NULL,
+            id integer NOT NULL,
+            PRIMARY KEY (sheetname, id)
+        ) ON COMMIT DROP;
     """
 
     insert_temp_sql = f"""
         INSERT INTO tmp_mctabel_save ({", ".join(MCTABEL_COLUMNS)})
+        VALUES %s
+    """
+
+    insert_delete_temp_sql = """
+        INSERT INTO tmp_mctabel_delete (sheetname, id)
         VALUES %s
     """
 
@@ -159,6 +172,15 @@ def save_mctabel(
         INNER JOIN tmp_mctabel_save AS incoming
             ON incoming.sheetname = output.sheetname
            AND incoming.id = output.id
+        FOR UPDATE OF output;
+    """
+
+    lock_deleted_sql = """
+        SELECT output.id
+        FROM mc.tabel_output AS output
+        INNER JOIN tmp_mctabel_delete AS deleting
+            ON deleting.sheetname = output.sheetname
+           AND deleting.id = output.id
         FOR UPDATE OF output;
     """
 
@@ -270,58 +292,72 @@ def save_mctabel(
         );
     """
 
-    step_start = perf_counter()
-    values = [(row.id, row.team_id, row.groupori, row.use, row.productgroup_id, row.sample_matrix, row.e02_sampmatcode1_en, row.e02_sampmatcode1_nl, row.e02_sampmatcode2_en, row.e02_sampmatcode2_nl, row.e02_sampmatcode3_en, row.e02_sampmatcode3_nl, row.e02_sampmatcode4_en, row.e02_sampmatcode4_nl, row.mtx_id, row.substance_group, row.param_id, row.param_termextendedname, row.paramtext_lims, row.paramtext_abbreviation, row.paramtyp_id, row.anmethodref, row.flex_scope_no, row.qual_quan_method, row.anlytyp_id, row.anlymd_id, row.mdacc_id, row.resinfo, row.resunit_wfsr, row.unit_id, row.exprres_id, row.lod, row.loq, row.ccalpha, row.ccbeta, row.resvaluncert, row.evallowlimit, row.actionlevel, row.lmttyp_id, row.confirmation_sop, row.lu_s_productid, row.detailedcom, row.val_report_name, row.val_report_date, row.matrix_cal_curve, row.measuring_range, row.trueness_j_recovery, row.rsdr, row.rsdwr_rsdrl, row.mutation_date, row.plan_nvwa_year, row.remarks, row.insert_date, row.sheetname) for row in rows]
-    timing_values = perf_counter() - step_start
 
-    step_start = perf_counter()
+    archive_deleted_sql = """
+        INSERT INTO mc.tabel_output_archive (
+            id, team_id, groupori, use, productgroup_id, sample_matrix, e02_sampmatcode1_en, e02_sampmatcode1_nl, e02_sampmatcode2_en, e02_sampmatcode2_nl, e02_sampmatcode3_en, e02_sampmatcode3_nl, e02_sampmatcode4_en, e02_sampmatcode4_nl, mtx_id, substance_group, param_id, param_termextendedname, paramtext_lims, paramtext_abbreviation, paramtyp_id, anmethodref, flex_scope_no, qual_quan_method, anlytyp_id, anlymd_id, mdacc_id, resinfo, resunit_wfsr, unit_id, exprres_id, lod, loq, ccalpha, ccbeta, resvaluncert, evallowlimit, actionlevel, lmttyp_id, confirmation_sop, lu_s_productid, detailedcom, val_report_name, val_report_date, matrix_cal_curve, measuring_range, trueness_j_recovery, rsdr, rsdwr_rsdrl, mutation_date, plan_nvwa_year, remarks, insert_date, sheetname
+        )
+        SELECT
+            output.id, output.team_id, output.groupori, output.use, output.productgroup_id, output.sample_matrix, output.e02_sampmatcode1_en, output.e02_sampmatcode1_nl, output.e02_sampmatcode2_en, output.e02_sampmatcode2_nl, output.e02_sampmatcode3_en, output.e02_sampmatcode3_nl, output.e02_sampmatcode4_en, output.e02_sampmatcode4_nl, output.mtx_id, output.substance_group, output.param_id, output.param_termextendedname, output.paramtext_lims, output.paramtext_abbreviation, output.paramtyp_id, output.anmethodref, output.flex_scope_no, output.qual_quan_method, output.anlytyp_id, output.anlymd_id, output.mdacc_id, output.resinfo, output.resunit_wfsr, output.unit_id, output.exprres_id, output.lod, output.loq, output.ccalpha, output.ccbeta, output.resvaluncert, output.evallowlimit, output.actionlevel, output.lmttyp_id, output.confirmation_sop, output.lu_s_productid, output.detailedcom, output.val_report_name, output.val_report_date, output.matrix_cal_curve, output.measuring_range, output.trueness_j_recovery, output.rsdr, output.rsdwr_rsdrl, output.mutation_date, output.plan_nvwa_year, output.remarks, output.insert_date, output.sheetname
+        FROM mc.tabel_output AS output
+        INNER JOIN tmp_mctabel_delete AS changed
+            ON changed.sheetname = output.sheetname
+           AND changed.id = output.id;
+    """
+
+    delete_output_sql = """
+        DELETE FROM mc.tabel_output AS output
+        USING tmp_mctabel_delete AS deleting
+        WHERE deleting.sheetname = output.sheetname
+          AND deleting.id = output.id;
+    """
+
+    values = [
+        tuple(getattr(row, column) for column in MCTABEL_COLUMNS)
+        for row in save_rows
+    ]
+    delete_values = [(row.sheetname, row.id) for row in delete_rows]
+
     with PostgresDatabase(
         DB_NAME,
         DB_USER,
         DB_PASSWORD,
         realdictcursor=False,
     ) as db:
-        timing_connection = perf_counter() - step_start
-
         try:
-            step_start = perf_counter()
             db.execute(create_temp_sql)
-            timing_create_temp = perf_counter() - step_start
 
-            step_start = perf_counter()
-            execute_values(
-                db.cursor,
-                insert_temp_sql,
-                values,
-                page_size=1000,
-            )
-            timing_temp_insert = perf_counter() - step_start
+            if values:
+                execute_values(
+                    db.cursor,
+                    insert_temp_sql,
+                    values,
+                    page_size=1000,
+                )
 
-            step_start = perf_counter()
+            if delete_values:
+                execute_values(
+                    db.cursor,
+                    insert_delete_temp_sql,
+                    delete_values,
+                    page_size=1000,
+                )
+
             db.execute(lock_existing_sql)
-            timing_lock = perf_counter() - step_start
-
-            step_start = perf_counter()
+            db.execute(lock_deleted_sql)
             db.execute(create_changed_sql)
-            timing_compare = perf_counter() - step_start
 
-            step_start = perf_counter()
             db.execute(archive_sql)
-            timing_archive = perf_counter() - step_start
-
-            step_start = perf_counter()
             db.execute(update_existing_sql)
             updated_count = db.cursor.rowcount
-            timing_update = perf_counter() - step_start
 
-            step_start = perf_counter()
             db.execute(insert_new_sql)
             inserted_count = db.cursor.rowcount
-            timing_insert = perf_counter() - step_start
 
-            step_start = perf_counter()
+            db.execute(archive_deleted_sql)
+            db.execute(delete_output_sql)
+
             db.commit()
-            timing_commit = perf_counter() - step_start
 
         except Exception as exc:
             db.rollback()
@@ -331,26 +367,18 @@ def save_mctabel(
                 detail="Failed to save table data.",
             ) from exc
 
-    unchanged_count = len(rows) - updated_count - inserted_count
+    deleted_count = len(delete_rows)
+    unchanged_count = len(save_rows) - updated_count - inserted_count
     timing_total = perf_counter() - total_start
 
     logger.warning(
-        "MC TABEL SAVE TIMING | rows=%d | keys=%.3fs | values=%.3fs | "
-        "connection=%.3fs | create_temp=%.3fs | temp_insert=%.3fs | "
-        "lock=%.3fs | compare=%.3fs | archive=%.3fs | update=%.3fs | "
-        "insert=%.3fs | commit=%.3fs | total=%.3fs",
+        "MC TABEL SAVE TIMING | rows=%d | inserted=%d | updated=%d | "
+        "deleted=%d | unchanged=%d | total=%.3fs",
         len(rows),
-        timing_keys,
-        timing_values,
-        timing_connection,
-        timing_create_temp,
-        timing_temp_insert,
-        timing_lock,
-        timing_compare,
-        timing_archive,
-        timing_update,
-        timing_insert,
-        timing_commit,
+        inserted_count,
+        updated_count,
+        deleted_count,
+        unchanged_count,
         timing_total,
     )
 
@@ -358,5 +386,6 @@ def save_mctabel(
         received=len(rows),
         inserted=inserted_count,
         updated=updated_count,
+        deleted=deleted_count,
         unchanged=unchanged_count,
     )

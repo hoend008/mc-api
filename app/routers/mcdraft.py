@@ -80,7 +80,8 @@ def get_draft(
             id,
             row_position,
             current_data,
-            baseline_data
+            baseline_data,
+            to_delete
         FROM mc.tabel_draft_row
         WHERE draft_id = %s
         ORDER BY row_position;
@@ -161,7 +162,8 @@ def save_draft(
             id,
             row_position,
             current_data,
-            baseline_data
+            baseline_data,
+            to_delete
         )
         VALUES %s;
     """
@@ -190,6 +192,7 @@ def save_draft(
                         row.row_position,
                         Json(row.current_data),
                         Json(row.baseline_data),
+                        row.to_delete,
                     )
                     for row in payload.rows
                 ]

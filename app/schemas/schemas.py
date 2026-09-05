@@ -67,10 +67,15 @@ class MCTabel(BaseModel):
 
 
 
+class MCTabelSaveRow(MCTabel):
+    to_delete: bool = False
+
+
 class MCTabelSaveResponse(BaseModel):
     received: int
     inserted: int
     updated: int
+    deleted: int
     unchanged: int
 
 
@@ -82,6 +87,7 @@ class MCDraftRow(BaseModel):
     row_position: int
     current_data: dict
     baseline_data: dict
+    to_delete: bool = False
 
 
 class MCDraftSaveRequest(BaseModel):
